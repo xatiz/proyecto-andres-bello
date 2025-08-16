@@ -98,18 +98,20 @@
         
         .prediction {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin: 10px 0;
             padding: 10px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
         
         .prediction-label {
             font-weight: bold;
             color: #2C5F86;
+            font-size: 28px;
         }
         
         .prediction-confidence {
@@ -144,6 +146,23 @@
             font-style: italic;
         }
         
+        .dolphin-decoration {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: auto;
+            z-index: 1000;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+            background: transparent;
+            clip-path: polygon(15% 10%, 85% 5%, 95% 40%, 85% 75%, 70% 90%, 30% 95%, 10% 70%, 5% 30%);
+        }
+        
+        .dolphin-decoration:hover {
+            transform: scale(1.1) rotate(-5deg);
+        }
+        
     </style>
 </head>
 <body>
@@ -162,11 +181,11 @@
         </div>
         
         <div id="label-container">
-            <h3>📊 Resultados de Detección:</h3>
             <p class="loading">Inicia la cámara para comenzar el reconocimiento...</p>
         </div>
     </div>
 
+    <img src="./images/delfin.jpeg" alt="Delfín decorativo" class="dolphin-decoration">
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
@@ -195,17 +214,14 @@
                 
                 document.getElementById("webcam-container").appendChild(webcam.canvas);
                 labelContainer = document.getElementById("label-container");
-                labelContainer.innerHTML = "<h3>📊 Resultados de Detección:</h3>";
+                labelContainer.innerHTML = "";
                 
-                for (let i = 0; i < maxPredictions; i++) {
-                    const predictionDiv = document.createElement("div");
-                    predictionDiv.className = "prediction";
-                    predictionDiv.innerHTML = `
-                        <span class="prediction-label">Cargando...</span>
-                        <span class="prediction-confidence">0%</span>
-                    `;
-                    labelContainer.appendChild(predictionDiv);
-                }
+                const predictionDiv = document.createElement("div");
+                predictionDiv.className = "prediction";
+                predictionDiv.innerHTML = `
+                    <span class="prediction-label">Cargando...</span>
+                `;
+                labelContainer.appendChild(predictionDiv);
                 
                 isActive = true;
                 updateUI();
@@ -229,26 +245,21 @@
             if (!model || !isActive) return;
             
             const prediction = await model.predict(webcam.canvas);
-            const predictions = labelContainer.querySelectorAll('.prediction');
+            const predictionElement = labelContainer.querySelector('.prediction');
             
-            prediction.forEach((pred, index) => {
-                if (predictions[index]) {
-                    const confidence = Math.round(pred.probability * 100);
-                    predictions[index].querySelector('.prediction-label').textContent = pred.className;
-                    predictions[index].querySelector('.prediction-confidence').textContent = `${confidence}%`;
-                    
-                    if (confidence > 70) {
-                        predictions[index].style.background = '#d4edda';
-                        predictions[index].style.borderLeft = '4px solid #28a745';
-                    } else if (confidence > 30) {
-                        predictions[index].style.background = '#fff3cd';
-                        predictions[index].style.borderLeft = '4px solid #ffc107';
-                    } else {
-                        predictions[index].style.background = 'white';
-                        predictions[index].style.borderLeft = 'none';
-                    }
-                }
-            });
+            let highestPrediction = prediction.reduce((max, pred) => 
+                pred.probability > max.probability ? pred : max
+            );
+            
+            if (predictionElement && highestPrediction.probability > 0.5) {
+                predictionElement.querySelector('.prediction-label').textContent = highestPrediction.className;
+                predictionElement.style.background = '#d4edda';
+                predictionElement.style.borderLeft = '4px solid #28a745';
+            } else if (predictionElement) {
+                predictionElement.querySelector('.prediction-label').textContent = 'No detectado';
+                predictionElement.style.background = 'white';
+                predictionElement.style.borderLeft = 'none';
+            }
         }
         
         function updateUI() {
@@ -276,7 +287,7 @@
                 webcam = null;
             }
             
-            labelContainer.innerHTML = "<h3>📊 Resultados de Detección:</h3><p class='loading'>Inicia la cámara para comenzar el reconocimiento...</p>";
+            labelContainer.innerHTML = "<p class='loading'>Inicia la cámara para comenzar el reconocimiento...</p>";
             updateUI();
         }
         
