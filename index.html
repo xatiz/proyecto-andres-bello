@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento de Objetos - TensorFlow</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #87CEEB, #B0E0E6);
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2C5F86;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        #webcam-container {
+            position: relative;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #webcam {
+            border-radius: 15px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        #startBtn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        #startBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        #stopBtn {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        #stopBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        #stopBtn:disabled, #startBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #label-container {
+            margin-top: 20px;
+            text-align: left;
+            background: rgba(44, 95, 134, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #2C5F86;
+        }
+        
+        .prediction {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .prediction-label {
+            font-weight: bold;
+            color: #2C5F86;
+        }
+        
+        .prediction-confidence {
+            background: #87CEEB;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            color: #2C5F86;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Reconocimiento de Objetos con IA</h1>
+        
+        <div class="status inactive" id="status">
+            📷 Cámara desactivada
+        </div>
+        
+        <div id="webcam-container"></div>
+        
+        <div class="controls">
+            <button id="startBtn">🚀 Activar Cámara</button>
+            <button id="stopBtn" disabled>⏹️ Desactivar Cámara</button>
+        </div>
+        
+        <div id="label-container">
+            <h3>📊 Resultados de Detección:</h3>
+            <p class="loading">Inicia la cámara para comenzar el reconocimiento...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        const URL = "./modeloo/";
+        let model, webcam, labelContainer, maxPredictions;
+        let isActive = false;
+        
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+            
+            try {
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                
+                const flip = true;
+                webcam = new tmImage.Webcam(640, 480, flip);
+                await webcam.setup();
+                await webcam.play();
+                window.requestAnimationFrame(loop);
+                
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = "<h3>📊 Resultados de Detección:</h3>";
+                
+                for (let i = 0; i < maxPredictions; i++) {
+                    const predictionDiv = document.createElement("div");
+                    predictionDiv.className = "prediction";
+                    predictionDiv.innerHTML = `
+                        <span class="prediction-label">Cargando...</span>
+                        <span class="prediction-confidence">0%</span>
+                    `;
+                    labelContainer.appendChild(predictionDiv);
+                }
+                
+                isActive = true;
+                updateUI();
+                
+            } catch (error) {
+                console.error("Error al cargar el modelo:", error);
+                status.textContent = "❌ Error al cargar el modelo";
+                status.className = "status inactive";
+            }
+        }
+        
+        async function loop() {
+            if (isActive && webcam) {
+                webcam.update();
+                await predict();
+                window.requestAnimationFrame(loop);
+            }
+        }
+        
+        async function predict() {
+            if (!model || !isActive) return;
+            
+            const prediction = await model.predict(webcam.canvas);
+            const predictions = labelContainer.querySelectorAll('.prediction');
+            
+            prediction.forEach((pred, index) => {
+                if (predictions[index]) {
+                    const confidence = Math.round(pred.probability * 100);
+                    predictions[index].querySelector('.prediction-label').textContent = pred.className;
+                    predictions[index].querySelector('.prediction-confidence').textContent = `${confidence}%`;
+                    
+                    if (confidence > 70) {
+                        predictions[index].style.background = '#d4edda';
+                        predictions[index].style.borderLeft = '4px solid #28a745';
+                    } else if (confidence > 30) {
+                        predictions[index].style.background = '#fff3cd';
+                        predictions[index].style.borderLeft = '4px solid #ffc107';
+                    } else {
+                        predictions[index].style.background = 'white';
+                        predictions[index].style.borderLeft = 'none';
+                    }
+                }
+            });
+        }
+        
+        function updateUI() {
+            if (isActive) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                status.textContent = "✅ Cámara activa - Detectando objetos...";
+                status.className = "status active";
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                status.textContent = "📷 Cámara desactivada";
+                status.className = "status inactive";
+            }
+        }
+        
+        function stopCamera() {
+            isActive = false;
+            if (webcam) {
+                webcam.stop();
+                const webcamContainer = document.getElementById("webcam-container");
+                if (webcamContainer.firstChild) {
+                    webcamContainer.removeChild(webcamContainer.firstChild);
+                }
+                webcam = null;
+            }
+            
+            labelContainer.innerHTML = "<h3>📊 Resultados de Detección:</h3><p class='loading'>Inicia la cámara para comenzar el reconocimiento...</p>";
+            updateUI();
+        }
+        
+        startBtn.addEventListener('click', init);
+        stopBtn.addEventListener('click', stopCamera);
+        
+        updateUI();
+    </script>
+</body>
+</html>
