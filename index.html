@@ -27,9 +27,12 @@
         }
         
         h1 {
-            color: #2C5F86;
+            color: #0066CC;
             margin-bottom: 30px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
+            text-transform: lowercase;
+            font-size: 36px;
         }
         
         #webcam-container {
@@ -54,36 +57,28 @@
         
         button {
             padding: 12px 24px;
-            font-size: 16px;
+            font-size: 20px;
             border: none;
-            border-radius: 25px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: bold;
-            text-transform: uppercase;
+            text-transform: lowercase;
             letter-spacing: 1px;
-        }
-        
-        #startBtn {
-            background: linear-gradient(45deg, #4CAF50, #45a049);
-            color: white;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            font-family: Arial, sans-serif;
+            background: #87CEEB;
+            color: #0066CC;
+            box-shadow: 0 4px 15px rgba(135, 206, 235, 0.3);
         }
         
         #startBtn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-        }
-        
-        #stopBtn {
-            background: linear-gradient(45deg, #f44336, #da190b);
-            color: white;
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+            box-shadow: 0 6px 20px rgba(135, 206, 235, 0.4);
         }
         
         #stopBtn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+            box-shadow: 0 6px 20px rgba(135, 206, 235, 0.4);
         }
         
         #stopBtn:disabled, #startBtn:disabled {
@@ -148,11 +143,12 @@
             color: #2C5F86;
             font-style: italic;
         }
+        
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Reconocimiento de Objetos con IA</h1>
+        <h1>🥬 verdura.com reconocimiento facial:]</h1>
         
         <div class="status inactive" id="status">
             📷 Cámara desactivada
@@ -170,6 +166,7 @@
             <p class="loading">Inicia la cámara para comenzar el reconocimiento...</p>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
