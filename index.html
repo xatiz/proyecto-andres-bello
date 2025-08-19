@@ -130,9 +130,9 @@
         }
         
         .status.active {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
         
         .status.inactive {
@@ -253,8 +253,8 @@
             
             if (predictionElement && highestPrediction.probability > 0.5) {
                 predictionElement.querySelector('.prediction-label').textContent = highestPrediction.className;
-                predictionElement.style.background = '#d4edda';
-                predictionElement.style.borderLeft = '4px solid #28a745';
+                predictionElement.style.background = '#d1ecf1';
+                predictionElement.style.borderLeft = '4px solid #007bff';
             } else if (predictionElement) {
                 predictionElement.querySelector('.prediction-label').textContent = 'No detectado';
                 predictionElement.style.background = 'white';
