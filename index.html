@@ -183,6 +183,7 @@
         <div id="label-container">
             <p class="loading">Inicia la cámara para comenzar el reconocimiento...</p>
         </div>
+        
     </div>
 
     <img src="./images/delfin.jpeg" alt="Delfín decorativo" class="dolphin-decoration">
@@ -193,6 +194,8 @@
         const URL = "./modeloo/";
         let model, webcam, labelContainer, maxPredictions;
         let isActive = false;
+        let lastDisplayTime = 0;
+        const DISPLAY_DELAY = 1000; // 1 segundo antes de cambiar
         
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
@@ -251,14 +254,26 @@
                 pred.probability > max.probability ? pred : max
             );
             
-            if (predictionElement && highestPrediction.probability > 0.5) {
-                predictionElement.querySelector('.prediction-label').textContent = highestPrediction.className;
-                predictionElement.style.background = '#d1ecf1';
-                predictionElement.style.borderLeft = '4px solid #007bff';
-            } else if (predictionElement) {
-                predictionElement.querySelector('.prediction-label').textContent = 'No detectado';
-                predictionElement.style.background = 'white';
-                predictionElement.style.borderLeft = 'none';
+            
+            // Mostrar directamente si tiene más de 70% de confianza
+            if (highestPrediction.probability > 0.7) {
+                const currentTime = Date.now();
+                
+                // Solo cambiar si ha pasado más de 1 segundo desde el último cambio
+                if (currentTime - lastDisplayTime > DISPLAY_DELAY) {
+                    if (predictionElement) {
+                        predictionElement.querySelector('.prediction-label').textContent = highestPrediction.className;
+                        predictionElement.style.background = '#d1ecf1';
+                        predictionElement.style.borderLeft = '4px solid #007bff';
+                        lastDisplayTime = currentTime;
+                    }
+                }
+            } else {
+                if (predictionElement) {
+                    predictionElement.querySelector('.prediction-label').textContent = 'Alumno no identificado';
+                    predictionElement.style.background = 'white';
+                    predictionElement.style.borderLeft = 'none';
+                }
             }
         }
         
@@ -278,6 +293,8 @@
         
         function stopCamera() {
             isActive = false;
+            lastDisplayTime = 0;
+            
             if (webcam) {
                 webcam.stop();
                 const webcamContainer = document.getElementById("webcam-container");
